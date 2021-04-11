@@ -4,7 +4,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const ejs = require('ejs')
 const mongoose = require('mongoose');
-const encrypt = require('mongoose-encryption'); //second level encryption library
+//const encrypt = require('mongoose-encryption'); //second level encryption library
+const md5 = require('md5');
 
 const app = express();
 
@@ -21,10 +22,9 @@ const userSchema = new mongoose.Schema({
 })
 
 //create a secret key
-const secret = process.env.SECRET;
-
+//const secret = process.env.SECRET;
 //plugin the secret key in the schema for encryption
-userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["userPassword"]});
+//userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["userPassword"]});
 
 const User = new mongoose.model('user', userSchema);
 
@@ -42,7 +42,7 @@ app.post('/register', function(req, res){
 
   let user = new User({
     username: email,
-    userPassword: password
+    userPassword: md5(password)
   })
   user.save(function(err){
     console.log(err)
@@ -60,7 +60,7 @@ app.post('/login', function(req, res){
   let email = req.body.username
   let password = req.body.password
 
-  User.findOne({username: email, userPassword: password}, function(user, err){
+  User.findOne({username: email, userPassword: md5(password)}, function(user, err){
     if(!err){
           console.log('hello')
           res.render('secrets')
@@ -75,3 +75,4 @@ app.listen(3000, function(err){
     console.log(err);
 
 })
+
