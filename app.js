@@ -6,6 +6,9 @@ const ejs = require('ejs')
 const mongoose = require('mongoose');
 //const encrypt = require('mongoose-encryption'); //second level encryption library
 const md5 = require('md5');
+const bcrypt = require('bcrypt');
+
+const saltRounds = 10;
 
 const app = express();
 
@@ -40,15 +43,18 @@ app.post('/register', function(req, res){
   let email = req.body.username;
   let password = req.body.password;
 
-  let user = new User({
-    username: email,
-    userPassword: md5(password)
-  })
-  user.save(function(err){
-    console.log(err)
-    if(!err){
-      res.render('secrets')
-    }
+  bcrypt.hash(password, saltRounds, function(err, hash){
+    let user = new User({
+      username: email,
+      userPassword: hash
+    })
+
+    user.save(function(err){
+      console.log(err)
+      if(!err){
+        res.render('secrets')
+      }
+    });
   });
 })
 
@@ -60,10 +66,13 @@ app.post('/login', function(req, res){
   let email = req.body.username
   let password = req.body.password
 
-  User.findOne({username: email, userPassword: md5(password)}, function(user, err){
+  User.findOne({username: email}, function(err, user){
     if(!err){
-          console.log('hello')
-          res.render('secrets')
+          bcrypt.compare(password, user.userPassword, function(err, result){
+            if(result === true){
+                res.render('secrets')
+            }
+          });
     }
   })
 })
@@ -75,4 +84,3 @@ app.listen(3000, function(err){
     console.log(err);
 
 })
-
